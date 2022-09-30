@@ -1,0 +1,34 @@
+---
+name: "SMTP to MQTT"
+description: "A simple, tiny, absolutely no-frills Python-based SMTP server that publishes mail to an MQTT topic then passes the mail on to the next relay (if defined)"
+url: "https://github.com/bcastellucci/smtp2mqtt"
+version: "1.0.0"
+slug: "smtp2mqtt"
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+image: "bcastellucci/smtp2mqtt/image-{arch}-smtp2mqtt"
+startup: application
+boot: auto
+map:
+  - share:rw
+ports:
+  25/tcp: 25
+schema:
+  mqtt_host: str?
+  mqtt_port: port?
+  mqtt_user: str?
+  mqtt_pass: password?
+  mqtt_topic: str?
+  smtp_relay_host: str?
+  smtp_relay_port: port?
+  smtp_relay_user: str?
+  smtp_relay_pass: password?
+  smtp_relay_starttls: bool?
+  smtp_relay_timeout_secs: int?
+  publish_attachments: bool?
+  save_attachments: bool?
+  debug: bool?

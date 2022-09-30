@@ -1,0 +1,64 @@
+---
+configuration:
+  mqtt_host:
+    name: The MQTT Host (optional)
+    description: >-
+      The hostname (or IP address) of the MQTT broker to publish to.
+      Defaults to 'core-mosquitto' (which assumes the mosquitto broker addon is installed and the intent is to use that)
+  mqtt_port:
+    name: The MQTT Port (optional)
+    description: >-
+      The port of the MQTT broker (defaults to 1883)
+  mqtt_user:
+    name: The MQTT Username (optional)
+    description: >-
+      The username for authenticating to the MQTT broker
+  mqtt_pass:
+    name: The MQTT Password (optional)
+    description: >-
+      The password for authenticating to the MQTT broker
+  mqtt_topic:
+    name: The MQTT Topic (optional)
+    description: >-
+      The base topic to use when publishing to the MQTT broker (defaults to smtp2mqtt).
+      Messages will be published to a sub-topic of this named for the sender email with any '/' stripped (ex. smtp2mqtt/sender@mail.com)
+  smtp_relay_host:
+    name: SMTP Relay Host (optional)
+    description: >-
+      The hostname (or IP address) of the SMTP server to use as a relay when forwarding messages & sending them on their way
+  smtp_relay_port:
+    name: SMTP Relay Port (optional)
+    description: >-
+      The port for the SMTP relay server
+  smtp_relay_user:
+    name: SMTP Relay Username (optional)
+    description: >-
+      The username for authenticating to the SMTP relay server
+  smtp_relay_pass:
+    name: SMTP Relay Password (optional)
+    description: >-
+      The password for authenticating to the SMTP relay server
+  smtp_relay_starttls:
+    name: SMTP Relay STARTTLS (optional)
+    description: >-
+      Whether or not to issue the STARTTLS command to the SMTP relay server
+  smtp_relay_timeout_secs:
+    name: SMTP Relay Timeout, in seconds (optional)
+    description: >-
+      Number of seconds to allow for sending the email on its way via the SMTP relay server (defaults to 10 seconds)
+  publish_attachments:
+    name: Publish Attachments (optional)
+    description: >-
+      Whether or not to publish email attachments to MQTT along with the body, defaults to false
+      (if false, the attachment will appear as a part in the payload but the data will be missing)
+  save_attachments:
+    name: Save Attachments (optional)
+    description: >-
+      Whether or not to save attacments to the file system, defaults to false
+      (if true, they will saved into a sub-directory of the share directory, named for the mqtt_topic and the full path and file name will appear in the payload)
+  debug:
+    name: Debug Logging
+    description: >-
+      Whether or not to augment existing INFO logging with additional, DEBUG messages
+network:
+  25/tcp: The port that Home Assistant will listen on for incoming SMTP connections
