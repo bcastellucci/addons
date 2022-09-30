@@ -1,7 +1,7 @@
 ---
 name: "SMTP to MQTT"
 description: "A simple, tiny, absolutely no-frills Python-based SMTP server that publishes mail to an MQTT topic then passes the mail on to the next relay (if defined)"
-url: "https://github.com/bcastellucci/addons/smtp2mqtt"
+url: "https://github.com/bcastellucci/addons"
 version: "1.0.0"
 slug: "smtp2mqtt"
 arch:
