@@ -4,14 +4,6 @@ Turns Home Assistent into an SMTP server, publishes messages (email) to an MQTT 
 
 *The original source for this came from the [wicol/emqtt] project on github
 
-## Installation
-
-Follow these steps to get the add-on installed on your system:
-
-1. Navigate in your Home Assistant frontend to **Supervisor** -> **Add-on Store**.
-2. Find the "SMTP to MQTT" add-on (in the community add-ons) and click it.
-3. Click on the "INSTALL" button.
-
 ## How to use
 
 The add-on strives to have sensible defaults, some assumptions it makes and things that may need tweaked (click 'Show unused optional configuration options' on the Configuration page to see these) are:
