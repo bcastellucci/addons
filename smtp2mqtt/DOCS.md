@@ -176,6 +176,6 @@ This is on purpose as I don't have a lot of time to address issues.
 
 If there is something egregious then feel free to post on the smtp2mqtt community [forum] or open an [issue] on my GitHub and I'll try to get to it.
 
-[forum]: https://community.home-assistant.io
-[issue]: https://github.com/bcastellucci/smtp2mqtt/issues
+[forum]: https://community.home-assistant.io/t/smtp-to-mqtt-add-on
+[issue]: https://github.com/bcastellucci/addons/issues
 [wicol/emqtt]: https://github.com/wicol/emqtt
