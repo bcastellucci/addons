@@ -13,11 +13,13 @@ from datetime import datetime
 from email.policy import default
 
 from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import AuthResult
 from paho.mqtt import publish
 
 
 defaults = {
     "SMTP_LISTEN_PORT": "25",
+    "SMTP_AUTH_REQUIRED": "False",
     "SMTP_RELAY_HOST": None,
     "SMTP_RELAY_PORT": None,
     "SMTP_RELAY_USER": None,
@@ -63,7 +65,7 @@ class SMTP2MQTTHandler:
         signal.signal(signal.SIGINT, self.set_quit)
 
     async def handle_DATA(self, server, session, envelope):
-        log_extra = {'uuid': str(uuid.uuid4())}
+        log_extra = {'uuid': str(uuid.uuid4())[:8]}
         log.info("Message from %s", envelope.mail_from, extra=log_extra)
         log.debug("Message data (truncated): %s", envelope.content.decode("utf8", errors="replace")[:250], extra=log_extra)
 
@@ -176,6 +178,10 @@ class SMTP2MQTTHandler:
         log.info("Quitting...", extra={'uuid': 'main thread'})
         self.quit = True
 
+def dummy_auth_function(server, session, envelope, mechanism, auth_data):
+    log.info("dummy-authenticating whatever credentials are offered...", extra={'uuid': 'main thread'})
+    return AuthResult(success=True)
+
 
 if __name__ == "__main__":
     log.debug(", ".join([f"{k}={v}" for k, v in config.items()]), extra={'uuid': 'main thread'})
@@ -187,6 +193,10 @@ if __name__ == "__main__":
         loop=loop,
         hostname="0.0.0.0",
         port=int(config["SMTP_LISTEN_PORT"]),
+        authenticator=dummy_auth_function,
+        auth_required=config["SMTP_AUTH_REQUIRED"],
+        #quite down the warnings when auth-required is false by letting this be true (we won't use it anyway, doesn't hurt to be true)...
+        auth_require_tls=(not config["SMTP_AUTH_REQUIRED"]),
     )
     c.start()
     log.info("Running", extra={'uuid': 'main thread'})

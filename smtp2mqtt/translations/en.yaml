@@ -22,6 +22,12 @@ configuration:
     description: >-
       The base topic to use when publishing to the MQTT broker (defaults to smtp2mqtt).
       Messages will be published to a sub-topic of this named for the sender email with any '/' stripped (ex. smtp2mqtt/sender@mail.com)
+  smtp_auth_required:
+    name: SMTP Auth Required (optional)
+    description: >-
+      Whether or not to require username/password authentication for incoming SMTP connections, defaults to false.
+      *It may be necessary to enable this to accommodate some devices (i.e., some, not all, Reolink cameras) that seem to require specifying a username & password in their SMTP configuration.
+      If enabled, a simple dummy authentication is performed that always returns success, meaning it will accept anything for the username & password.
   smtp_relay_host:
     name: SMTP Relay Host (optional)
     description: >-

@@ -108,6 +108,18 @@ Example:
 
 Default value: `smtp2mqtt`
 
+### Option: `smtp_auth_required` (optional)
+
+Whether or not to require username/password authentication for incoming SMTP connections.
+
+*It may be necessary to enable this to accommodate some devices (i.e., some, not all, Reolink cameras) that seem to require specifying a username & password in their SMTP configuration.
+
+If enabled, a simple dummy authentication is performed that always returns success, meaning it will accept anything for the username & password.
+
+*Note - TLS will be disabled if this is true and will cause a warning in the log, this is OK.
+
+Default value: `false`
+
 ### Option: `smtp_relay_host` (optional)
 
 The host name or IP address of an SMTP server to relay the message through, in order to send it on its way.
