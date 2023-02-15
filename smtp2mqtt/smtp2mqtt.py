@@ -9,13 +9,17 @@ import json
 import base64
 import smtplib
 import uuid
-from datetime import datetime
 from email.policy import default
 
+#from types import MethodType
+#from aiosmtpd.smtp import SMTP
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import AuthResult
 from paho.mqtt import publish
 
+##
+## Original source from https://github.com/wicol/emqtt
+##
 
 defaults = {
     "SMTP_LISTEN_PORT": "25",
@@ -67,7 +71,8 @@ class SMTP2MQTTHandler:
     async def handle_DATA(self, server, session, envelope):
         log_extra = {'uuid': str(uuid.uuid4())[:8]}
         log.info("Message from %s", envelope.mail_from, extra=log_extra)
-        log.debug("Message data (truncated): %s", envelope.content.decode("utf8", errors="replace")[:250], extra=log_extra)
+        if (log.isEnabledFor(logging.DEBUG)):
+            log.debug("Message data (truncated): %s", envelope.content.decode("utf8", errors="replace")[:500], extra=log_extra)
 
         # extract the message as an email.message.Message object
         msg = email.message_from_bytes(envelope.original_content, policy=default)
@@ -85,46 +90,51 @@ class SMTP2MQTTHandler:
         # to overwrite successively, but it's ok, we're not really that picky about the headers...
         for header in msg.items():
             payload['headers'][header[0].lower()] = header[1]
+            if (log.isEnabledFor(logging.DEBUG)): log.debug("got message header %s: %s", header[0], header[1], extra=log_extra)
         
-        # now walk the parts of the message and add each one to the payload
-        for msg_part in msg.walk():
-            if msg_part.is_multipart():
-                continue
-            else:
-                mime_part = {'headers': {}}
-                # headers (same deal as above)
-                for header in msg_part.items():
-                    mime_part['headers'][header[0].lower()] = header[1]
-                # this is most likely the main message body - decode it and add it as plain text
-                if ('text/' in msg_part.get_content_type() and 'attachment' not in msg_part.get('content-disposition', failobj='nope')):
-                    mime_part['best_guess'] = "message body"
-                    mime_part['content'] = msg_part.get_payload(decode=True).decode("utf-8")
-                else:
-                    mime_part['best_guess'] = "attachment"
-                    # only include the data if configured to!
-                    if (config["PUBLISH_ATTACHMENTS"]):
-                        # encode it as base64. Even though it is already encoded in some manner and
-                        # the content-type and content-transfer-encoding headers would tell someone how
-                        # to decode it, it is courteous to just normalize it to one, specific, well-known
-                        # encoding and be done with it.
-                        mime_part['content'] = base64.b64encode(msg_part.get_payload(decode=True)).decode('utf-8')
-                    else:
-                        log.debug("SKIP publish attachment data", extra=log_extra)
-                        mime_part['content'] = "<not configured to publish attachment data>"
-                    # save the attachment, if we are supposed to
-                    if (config["SAVE_ATTACHMENTS_DIR"]):
-                        filename = "{}_{}".format(log_extra['uuid'], msg_part.get_filename())
-                        file_path = os.path.join(config["SAVE_ATTACHMENTS_DIR"], filename)
-                        log.info("Saving attachment to %s", file_path, extra=log_extra)
-                        with open(file_path, "wb") as f:
-                            f.write(msg_part.get_payload(decode=True))
-                        # note the file name in the payload
-                        mime_part['saved_file_name'] = file_path
-                    else:
-                        log.debug("SKIP saving attachment data to a file", extra=log_extra)
-                payload['mime_parts'].append(mime_part)
+        #get the message body
+        msgBody = msg.get_body()
+        mime_part = {'best_guess': 'message body', 'headers': {}}
+        # headers (same deal as above)
+        for header in msgBody.items():
+            mime_part['headers'][header[0].lower()] = header[1]
+            if (log.isEnabledFor(logging.DEBUG)): log.debug("got body header %s: %s", header[0], header[1], extra=log_extra)
+        mime_part['content'] = msgBody.get_content()
+        if (log.isEnabledFor(logging.DEBUG)): log.debug("stored [%s] as the content", mime_part['content'], extra=log_extra)
+        payload['mime_parts'].append(mime_part)
 
-        # plublish
+        # get the attachments next
+        for attachment in msg.iter_attachments():
+            mime_part = {'best_guess': 'attachment', 'headers': {}}
+            # headers (same deal as above)
+            for header in attachment.items():
+                mime_part['headers'][header[0].lower()] = header[1]
+                if (log.isEnabledFor(logging.DEBUG)): log.debug("got attachment header %s: %s", header[0], header[1], extra=log_extra)
+            # only include the data if configured to!
+            if (config["PUBLISH_ATTACHMENTS"]):
+                # encode it as base64. Even though it is already encoded in some manner and
+                # the content-type and content-transfer-encoding headers would tell someone how
+                # to decode it, it is courteous to just normalize it to one, specific, well-known
+                # encoding and be done with it.
+                mime_part['content'] = base64.b64encode(attachment.get_content()).decode("utf8", errors="replace")
+                if (log.isEnabledFor(logging.DEBUG)): log.debug("stored [%s] as the content", mime_part['content'], extra=log_extra)
+            else:
+                log.debug("SKIP publish attachment data", extra=log_extra)
+                mime_part['content'] = "<not configured to publish attachment data>"
+            # save the attachment, if we are supposed to
+            if (config["SAVE_ATTACHMENTS_DIR"]):
+                filename = f"{log_extra['uuid']}_{attachment.get_filename()}"
+                file_path = os.path.join(config["SAVE_ATTACHMENTS_DIR"], filename)
+                log.info("Saving attachment to %s", file_path, extra=log_extra)
+                with open(file_path, "wb") as f:
+                    f.write(attachment.get_content())
+                # note the file name in the payload
+                mime_part['saved_file_name'] = file_path
+            else:
+                log.debug("SKIP saving attachment data to a file", extra=log_extra)
+        payload['mime_parts'].append(mime_part)
+
+        # publish
         self.mqtt_publish(topic, json.dumps(payload), log_extra)
 
         # go ahead & send the original message on its way (if configured to)
@@ -138,7 +148,7 @@ class SMTP2MQTTHandler:
 
     def mqtt_publish(self, topic, payload, log_extra):
         if config["DEBUG"]:
-            log.debug('Publishing "%s" to %s', payload, topic, extra=log_extra)
+            if (log.isEnabledFor(logging.DEBUG)): log.debug('Publishing [%s] to %s', payload, topic, extra=log_extra)
         else:
             log.info('Publishing to %s', topic, extra=log_extra)
         try:
@@ -182,9 +192,20 @@ def dummy_auth_function(server, session, envelope, mechanism, auth_data):
     log.info("dummy-authenticating whatever credentials are offered...", extra={'uuid': 'main thread'})
     return AuthResult(success=True)
 
+#class MySMTP(SMTP):
+#    #accommodate messages that don't quite conform to RFC specs, usually by encoding the attachment without any line breaks
+#    #https://aiosmtpd.readthedocs.io/en/stable/smtp.html#aiosmtpd.smtp.SMTP.line_length_limit
+#    line_length_limit = 2**32
+
+#def factory_function(self):
+#    smtp = MySMTP(self.handler, **self.SMTP_kwargs)
+#    #log.debug(f"returning SMTP instance {smtp.__class__.__name__} with line_length_limit {smtp.line_length_limit}", extra={'uuid': 'main thread'})
+#    return smtp
+
 
 if __name__ == "__main__":
-    log.debug(", ".join([f"{k}={v}" for k, v in config.items()]), extra={'uuid': 'main thread'})
+    if (log.isEnabledFor(logging.DEBUG)):
+        log.debug(", ".join([f"{k}={v}" for k, v in config.items()]), extra={'uuid': 'main thread'})
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -197,7 +218,9 @@ if __name__ == "__main__":
         auth_required=config["SMTP_AUTH_REQUIRED"],
         #quite down the warnings when auth-required is false by letting this be true (we won't use it anyway, doesn't hurt to be true)...
         auth_require_tls=(not config["SMTP_AUTH_REQUIRED"]),
+        #decode_data=True,
     )
+#    c.factory=MethodType(factory_function, c)
     c.start()
     log.info("Running", extra={'uuid': 'main thread'})
     try:
