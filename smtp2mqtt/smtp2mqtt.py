@@ -10,9 +10,6 @@ import base64
 import smtplib
 import uuid
 from email.policy import default
-
-#from types import MethodType
-#from aiosmtpd.smtp import SMTP
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import AuthResult
 from paho.mqtt import publish
@@ -192,16 +189,6 @@ def dummy_auth_function(server, session, envelope, mechanism, auth_data):
     log.info("dummy-authenticating whatever credentials are offered...", extra={'uuid': 'main thread'})
     return AuthResult(success=True)
 
-#class MySMTP(SMTP):
-#    #accommodate messages that don't quite conform to RFC specs, usually by encoding the attachment without any line breaks
-#    #https://aiosmtpd.readthedocs.io/en/stable/smtp.html#aiosmtpd.smtp.SMTP.line_length_limit
-#    line_length_limit = 2**32
-
-#def factory_function(self):
-#    smtp = MySMTP(self.handler, **self.SMTP_kwargs)
-#    #log.debug(f"returning SMTP instance {smtp.__class__.__name__} with line_length_limit {smtp.line_length_limit}", extra={'uuid': 'main thread'})
-#    return smtp
-
 
 if __name__ == "__main__":
     if (log.isEnabledFor(logging.DEBUG)):
@@ -218,9 +205,7 @@ if __name__ == "__main__":
         auth_required=config["SMTP_AUTH_REQUIRED"],
         #quite down the warnings when auth-required is false by letting this be true (we won't use it anyway, doesn't hurt to be true)...
         auth_require_tls=(not config["SMTP_AUTH_REQUIRED"]),
-        #decode_data=True,
     )
-#    c.factory=MethodType(factory_function, c)
     c.start()
     log.info("Running", extra={'uuid': 'main thread'})
     try:
