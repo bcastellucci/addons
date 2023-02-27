@@ -1,3 +1,10 @@
+## [1.0.3] - 2023-02-27
+
+### Changed
+
+- Corrected indent error causing the message body to be appended to the mime_parts array twice
+- Added smtp_auth_required to the overall list of configuration settings in DOCS.md (the lengthy description of it was there already).
+
 ## [1.0.2] - 2023-02-15
 
 ### Added

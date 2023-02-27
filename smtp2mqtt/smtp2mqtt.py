@@ -102,10 +102,10 @@ class SMTP2MQTTHandler:
 
         # get the attachments next
         for attachment in msg.iter_attachments():
-            mime_part = {'best_guess': 'attachment', 'headers': {}}
+            _mime_part = {'best_guess': 'attachment', 'headers': {}}
             # headers (same deal as above)
             for header in attachment.items():
-                mime_part['headers'][header[0].lower()] = header[1]
+                _mime_part['headers'][header[0].lower()] = header[1]
                 if (log.isEnabledFor(logging.DEBUG)): log.debug("got attachment header %s: %s", header[0], header[1], extra=log_extra)
             # only include the data if configured to!
             if (config["PUBLISH_ATTACHMENTS"]):
@@ -113,11 +113,11 @@ class SMTP2MQTTHandler:
                 # the content-type and content-transfer-encoding headers would tell someone how
                 # to decode it, it is courteous to just normalize it to one, specific, well-known
                 # encoding and be done with it.
-                mime_part['content'] = base64.b64encode(attachment.get_content()).decode("utf8", errors="replace")
-                if (log.isEnabledFor(logging.DEBUG)): log.debug("stored [%s] as the content", mime_part['content'], extra=log_extra)
+                _mime_part['content'] = base64.b64encode(attachment.get_content()).decode("utf8", errors="replace")
+                if (log.isEnabledFor(logging.DEBUG)): log.debug("stored [%s] as the content", _mime_part['content'], extra=log_extra)
             else:
                 log.debug("SKIP publish attachment data", extra=log_extra)
-                mime_part['content'] = "<not configured to publish attachment data>"
+                _mime_part['content'] = "<not configured to publish attachment data>"
             # save the attachment, if we are supposed to
             if (config["SAVE_ATTACHMENTS_DIR"]):
                 filename = f"{log_extra['uuid']}_{attachment.get_filename()}"
@@ -126,10 +126,10 @@ class SMTP2MQTTHandler:
                 with open(file_path, "wb") as f:
                     f.write(attachment.get_content())
                 # note the file name in the payload
-                mime_part['saved_file_name'] = file_path
+                _mime_part['saved_file_name'] = file_path
             else:
                 log.debug("SKIP saving attachment data to a file", extra=log_extra)
-        payload['mime_parts'].append(mime_part)
+            payload['mime_parts'].append(_mime_part)
 
         # publish
         self.mqtt_publish(topic, json.dumps(payload), log_extra)

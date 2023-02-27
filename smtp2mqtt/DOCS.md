@@ -66,6 +66,8 @@ mqtt_user:
 mqtt_pass: 
 mqtt_topic: smtp2mqtt
 
+smtp_auth_required: false
+
 smtp_relay_host: 
 smtp_relay_port: 25
 smtp_relay_user: 
