@@ -96,7 +96,10 @@ class SMTP2MQTTHandler:
         for header in msgBody.items():
             mime_part['headers'][header[0].lower()] = header[1]
             if (log.isEnabledFor(logging.DEBUG)): log.debug("got body header %s: %s", header[0], header[1], extra=log_extra)
-        mime_part['content'] = msgBody.get_content()
+        try:
+            mime_part['content'] = msgBody.get_content()
+        except:
+            mime_part['content'] = ""
         if (log.isEnabledFor(logging.DEBUG)): log.debug("stored [%s] as the content", mime_part['content'], extra=log_extra)
         payload['mime_parts'].append(mime_part)
 

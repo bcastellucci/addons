@@ -1,3 +1,9 @@
+## [1.0.4] - 2024-06-24
+
+### Changed
+
+- Added default error handling for getting "content" from "mime_part" to account for crash due to unexpected mime type.
+
 ## [1.0.3] - 2023-02-27
 
 ### Changed
